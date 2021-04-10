@@ -1,9 +1,7 @@
-// libraries necessary for RTC
-#include <Wire.h>
-#include <DS3231.h>
-
-// library needed for LCD
+// libraries needed 
 #include <LiquidCrystal.h>
+#include <DS3231.h>
+#include <Wire.h>
 
 // import clock to maintain accurate timekeeping
 DS3231 clock;
@@ -26,7 +24,7 @@ void setup() {
   Serial.begin(9600); // initialize serial communication at 9600 bps
   
   Serial.println("Initialize RTC module");
-  clock.begin() // initialize DS3231
+  clock.begin(); // initialize DS3231
   clock.setDateTime(__DATE__,__TIME__); // sends sketch compiling time to Arduino
 
   // set up LCD's number of columns and rows
@@ -36,7 +34,7 @@ void setup() {
 void loop() {
   
   // retrieve time
-  getTime()
+  getTime();
   // check if time is at the beginning of a minute, turn fan on for 30 s 
   if(dt.second == 60000) {
     clockwiseDirection();
@@ -45,10 +43,10 @@ void loop() {
 
   // display current time
   lcd.setCursor(0,1);
-  lcd.print(getTime()/1000); // divide by 1000 because time is retrieved in milliseconds
+ // lcd.print(dt.second/1000); // divide by 1000 because time is retrieved in milliseconds
 
   // display speed and direction on lcd
-  for(clockWiseDirection()) {
+  for(clockwiseDirection()) {
     if(analogWrite(ENABLE,255)) {
       lcd.print("C Full");
     }
@@ -67,7 +65,7 @@ void loop() {
   }
 
   // display speed and direction on lcd
-  for(cclockWiseDirection()) {
+  for(cclockwiseDirection()) {
     if(analogWrite(ENABLE,255)) {
       lcd.print("CC Full");
     }
