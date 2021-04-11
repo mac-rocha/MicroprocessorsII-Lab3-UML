@@ -11,8 +11,12 @@ RTCDateTime dt;
 int ENABLE = 4;
 int DIRA = 5;
 int DIRB = 6;
+int interruptPin = 18;
 
 int button = 3; // button assigned to pin 3
+
+String time = "", speed = "", direction = "";
+bool C = false, CC = false;
 
 // initialize "LiquidCrystal" library with numbers of the interface pins
 LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
@@ -33,6 +37,7 @@ void setup() {
 
   // set up LCD's number of columns and rows
   lcd.begin(16, 2);
+  lcd.print("Micro 2");
 }
 
 void loop() {
@@ -42,91 +47,127 @@ void loop() {
   
   // check if time is at the beginning of a minute, turn fan on for 30 s 
   if(dt.second == 60000) {
-    spinMotor();
+    spinClockwise();
     delay(30000);
-  }
-
-  // display current time
-  lcd.setCursor(0,1);
-  lcd.print(dt.second/1000); // divide by 1000 because time is retrieved in milliseconds
-
-  // display clockwise direction and speed on LCD if motor is spinning clockwise
-  if(DIRA==HIGH) {
-    if(ENABLE==255) {
-      lcd.print("C Full");
-    }
-    else if(ENABLE==128) {
-      lcd.print("C 1/2");
-    }
-    else if(ENABLE==64) {
-      lcd.print("C 1/4");
-    }
-    else if(ENABLE==192) {
-      lcd.print("C 3/4");
-    }
-    else if(ENABLE==LOW) {
-      lcd.print("C 0");
-    }
-  }
-
-  // display counter clockwise direction and speed on LCD if motor is spinning CC
-  else if(DIRA==LOW) {
-    if(ENABLE==255) {
-      lcd.print("CC Full");
-    }
-    else if(ENABLE==128) {
-      lcd.print("CC 1/2");
-    }
-    else if(ENABLE==64) {
-      lcd.print("CC 1/4");
-    }
-    else if(ENABLE==192) {
-      lcd.print("CC 3/4");
-    }
-    else if(ENABLE==LOW) {
-      lcd.print("CC 0");
-    }
   }
 }
 
-// function to spin motor  
-void spinMotor() {
+// function to retrieve info on which direction to spin
+void updateInfo() {
+  if (C){
+    spinCounterClockwise();
+  }
+  else {
+    spinClockwise();
+  }
+}
+
+// function to spin motor clockwise
+void spinClockwise() {
+  C = true; 
+  CC = false;
+  direction = "C"; // set direction string
+  
   analogWrite(ENABLE,255); // motor on full speed
   digitalWrite(DIRA,HIGH); // clockwise
   digitalWrite(DIRB,LOW);
+  speed = "full";
+  getTime();
+  setLCD();
   delay(2000);
+    
   analogWrite(ENABLE,180); 
   delay(2000);
+  
   analogWrite(ENABLE,128); // half speed
+  speed = "1/2";
+  getTime();
+  setLCD();
   delay(2000);
+  
   analogWrite(ENABLE,64); // 1/4 speed
+  speed = "1/4";
+  getTime();
+  setLCD();
   delay(2000);
+  
   analogWrite(ENABLE,128); //half speed
+  speed = "1/2";
+  getTime();
+  setLCD();
   delay(2000);
+  
   analogWrite(ENABLE,192); // 3/4 speed
+  speed = "3/4";
+  getTime();
+  setLCD();
   delay(2000);
+  
   analogWrite(ENABLE,255); // full speed
+  speed = "Full";
+  getTime();
+  setLCD();
   delay(2000);
-  digitalWrite(ENABLE,LOW); //all done
+  
+  digitalWrite(ENABLE,LOW); // all done
+  speed = "0";
+  getTime();
+  setLCD();
   delay(10000);
+}
 
+// function to spin motor counter clockwise
+void spinCounterClockwise() {
+  C = false; 
+  CC = true;
+  
+  direction = "CC";  // set direction string
+  
   analogWrite(ENABLE,255); // motor on full speed
   digitalWrite(DIRA,LOW); // counter clockwise
   digitalWrite(DIRB,HIGH);
+  speed = "full";
+  getTime();
+  setLCD();
   delay(2000);
+    
   analogWrite(ENABLE,180); 
   delay(2000);
+  
   analogWrite(ENABLE,128); // half speed
+  speed = "1/2";
+  getTime();
+  setLCD();
   delay(2000);
+  
   analogWrite(ENABLE,64); // 1/4 speed
+  speed = "1/4";
+  getTime();
+  setLCD();
   delay(2000);
+  
   analogWrite(ENABLE,128); //half speed
+  speed = "1/2";
+  getTime();
+  setLCD();
   delay(2000);
-  analogWrite(ENABLE,180); 
-  delay(2000); 
+  
+  analogWrite(ENABLE,192); // 3/4 speed
+  speed = "3/4";
+  getTime();
+  setLCD();
+  delay(2000);
+  
   analogWrite(ENABLE,255); // full speed
+  speed = "Full";
+  getTime();
+  setLCD();
   delay(2000);
+  
   digitalWrite(ENABLE,LOW); //all done
+  speed = "0";
+  getTime();
+  setLCD();
   delay(10000);
 }
 
@@ -144,6 +185,15 @@ void getTime() {
   Serial.print(dt.second); Serial.println("");
 
   delay(1000);
+}
+
+void setLCD()
+{
+  // set postion
+  lcd.setCursor(0,0);
+
+  // print to LCD
+  lcd.print(time + " " + speed + " " + direction);
 }
 
 // function to check if button has been pressed
