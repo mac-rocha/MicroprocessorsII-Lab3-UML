@@ -31,7 +31,7 @@ void setup() {
   pinMode(directionButton, INPUT_PULLUP);
 
   //set fan speed/direction at start
-  analogWrite(powerPin, 0);
+  analogWrite(powerPin, 0);  
   digitalWrite(directionA, LOW);
   digitalWrite(directionB, HIGH);
 
@@ -43,8 +43,9 @@ void setup() {
 }
 
 void loop() {
-  // checks if speed button is pressed
-  speedChange();
+  // controls the speed of the fan
+//  speedChange();  // checks if speed button is pressed
+  defaultSpeed();
 
   // displays time, speed, and direction
   printToLCD();
@@ -60,6 +61,19 @@ void speedChange() {
       }
       analogWrite(powerPin, fanSpeed[fanIndex]);
       delay(200);
+    }
+  }
+}
+
+void defaultSpeed() {
+  if (clock.second >= 30) {
+    if (clock.second == 30) {
+      analogWrite(powerPin, 0);
+    }
+  }
+  else {
+    if (clock.second == 0) {
+      analogWrite(powerPin, 190);
     }
   }
 }
