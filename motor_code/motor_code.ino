@@ -67,15 +67,19 @@ void speedChange() {
 
 void defaultSpeed() {
   if (clock.second >= 30) {
-    if (clock.second == 30) {
-      analogWrite(powerPin, 0);
-    }
+    fanIndex = 0;
+  }
+  else if (clock.second >= 20) {
+    fanIndex = 1;
+  }
+  else if (clock.second >= 10) {
+    fanIndex = 2;
   }
   else {
-    if (clock.second == 0) {
-      analogWrite(powerPin, 190);
-    }
+    fanIndex = 3;
   }
+
+  analogWrite(powerPin, fanSpeed[fanIndex]);
 }
 
 void directionChange() {
