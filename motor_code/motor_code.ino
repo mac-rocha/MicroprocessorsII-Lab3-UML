@@ -1,6 +1,5 @@
 // included libraries
 #include <LiquidCrystal.h>
-#include <DS3231.h>
 #include "DS1307.h"
 
 // set constants for pins
@@ -12,8 +11,9 @@
 
 // global variables
 int fanSpeed[] = {0, 127, 191, 255};
-char* fanString[] = {"off", "1/2 speed", "3/4 speed", "full speed"};
+char* fanString[] = {"off       ", "1/2 speed ", "3/4 speed ", "full speed"};
 int fanIndex = 0;
+boolean doChangeDirection = false;
 DS1307 clock;//define a object of DS1307 class
 
 // initialize the library with the numbers of the interface pins
@@ -38,17 +38,52 @@ void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
 
-  //configure external interrupt for direction
-  attachInterrupt(digitalPinToInterrupt(directionButton), directionChange, LOW);
+  // configure external interrupt for direction
+  attachInterrupt(digitalPinToInterrupt(directionButton), setDirectionFlag, LOW);
+
+  // configure timer interrupt
+  cli();  //stop interrupts
+  //set timer1 interrupt at 1Hz
+  TCCR1A = 0;// set entire TCCR1A register to 0
+  TCCR1B = 0;// same for TCCR1B
+  TCNT1  = 0;//initialize counter value to 0
+  // set compare match register for 1hz increments
+  OCR1A = 15624;// = (16*10^6) / (1*1024) - 1 (must be <65536)
+  // turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  // Set CS12 and CS10 bits for 1024 prescaler
+  TCCR1B |= (1 << CS12) | (1 << CS10);  
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+  sei();//allow interrupts
+
 }
+
+boolean updateLCD = false;
+
+ISR(TIMER1_COMPA_vect){  //timer1 interrupt 1Hz toggles pin 13 (LED)
+//generates pulse wave of frequency 1Hz/2 = 0.5kHz (takes two cycles for full wave- toggle high then toggle low)
+  updateLCD = true;
+}
+
 
 void loop() {
   // controls the speed of the fan
-//  speedChange();  // checks if speed button is pressed
-  defaultSpeed();
+//    speedChange();  // checks if speed button is pressed
+  defaultSpeed();  // rotates the speed on a minute cycle
+
+  // changes the direction of the fan based off of interrupt
+  if (doChangeDirection) {
+    doChangeDirection = false;
+    directionChange();
+  }
 
   // displays time, speed, and direction
-  printToLCD();
+  if (updateLCD) {
+    updateLCD = false;
+    printTime();
+    printFan();
+  }
 }
 
 void speedChange() {
@@ -87,13 +122,12 @@ void directionChange() {
     if (digitalRead(directionButton) == LOW) {
       digitalWrite(directionA, !digitalRead(directionA));
       digitalWrite(directionB, !digitalRead(directionB));
-      delay(200);
+      delay(500);
     }
 }
 
-void printToLCD() {
-  printTime();
-  printFan();
+void setDirectionFlag() {
+  doChangeDirection = true;
 }
 
 void printTime() {
@@ -116,19 +150,18 @@ void printTime() {
     lcd.print(0);
   }
   lcd.print(theSecond);
-  lcd.print("    ");
+  lcd.print("        ");
 }
 
 void printFan() {
   lcd.setCursor(0,1);
   if (digitalRead(directionA) == HIGH) {
-    lcd.print("CCW");
+    lcd.print("CCW   ");
   }
   else {
-    lcd.print("CW ");
+    lcd.print("CW    ");
   }
 
   lcd.setCursor(6,1);
   lcd.print(fanString[fanIndex]);
-  lcd.print("        ");
 }
